@@ -25,11 +25,13 @@ SECRET_KEY = 'django-insecure-ok7y85y&rk#_*@sovyw$r=_#g%xtb@^1whv1()l$7bih0wn_r$
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['evm.p2e.tg', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = [
+    'evm.p2e.tg',
+    'localhost',
+    '127.0.0.1',
+]
 
-
-# Application definition
-
+# Приложения
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -42,6 +44,7 @@ INSTALLED_APPS = [
     '_auth',
 ]
 
+# Middleware (CorsMiddleware должен идти самым первым)
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
@@ -72,10 +75,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'evm_wallet.wsgi.application'
 
-
-# Database
-# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
+# БД (dev)
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -83,76 +83,66 @@ DATABASES = {
     }
 }
 
-
-# Password validation
-# https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
-
+# Валидаторы пароля
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-
-# Internationalization
-# https://docs.djangoproject.com/en/5.2/topics/i18n/
-
+# I18N
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_TZ = True
 
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.2/howto/static-files/
-
+# Статика
 STATIC_URL = 'static/'
-
-# Default primary key field type
-# https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Django REST Framework settings
+# DRF
 REST_FRAMEWORK = {
-    'DEFAULT_RENDERER_CLASSES': [
-        'rest_framework.renderers.JSONRenderer',
-    ],
-    'DEFAULT_PARSER_CLASSES': [
-        'rest_framework.parsers.JSONParser',
-    ],
+    'DEFAULT_RENDERER_CLASSES': ['rest_framework.renderers.JSONRenderer'],
+    'DEFAULT_PARSER_CLASSES': ['rest_framework.parsers.JSONParser'],
 }
 
-# CORS settings
+# --------------------------
+# CORS / CSRF / Cookies
+# --------------------------
+# Cookie-авторизация между доменами (Vercel → evm.p2e.tg)
+CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOW_CREDENTIALS = True
+
+# Явные origin'ы + regex для всех поддоменов Vercel
 CORS_ALLOWED_ORIGINS = [
     "https://telegram-mini-app-five-wheat.vercel.app",
     "https://evm.p2e.tg",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+]
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://.*\.vercel\.app$",
 ]
 
-CORS_ALLOW_CREDENTIALS = True
+# Ускорение preflight (опционально)
+CORS_PREFLIGHT_MAX_AGE = 86400
 
-CORS_ALLOW_ALL_ORIGINS = True  # Для разработки - разрешить все домены
-
-CORS_ALLOW_HEADERS = [
-    'accept',
-    'accept-encoding',
-    'authorization',
-    'content-type',
-    'dnt',
-    'origin',
-    'user-agent',
-    'x-csrftoken',
-    'x-requested-with',
+# Если делаешь stateful-запросы (POST/PUT/DELETE) с этих origin'ов — их надо доверять для CSRF
+CSRF_TRUSTED_ORIGINS = [
+    "https://telegram-mini-app-five-wheat.vercel.app",
+    "https://evm.p2e.tg",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
 ]
+
+# Куки для кросс-доменного доступа
+SESSION_COOKIE_SAMESITE = 'None'
+CSRF_COOKIE_SAMESITE = 'None'
+
+# В проде куки должны быть Secure; локально можно оставить True (если бек работает по https)
+# Если бек локально по http, то 'Secure' куки не установятся — для локалки лучше тестировать токенами в заголовке,
+# либо поднимать https-туннель/сертификат.
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
